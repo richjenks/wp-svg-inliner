@@ -9,6 +9,9 @@ Author: Rich Jenks
 Author URI: https://richjenks.com
 */
 
+/**
+ * Show admin notice if Safe SVG not installed
+ */
 add_filter('admin_init', function() {
 	if (!is_plugin_active('safe-svg/safe-svg.php')) {
 		add_action('admin_notices', function() {
@@ -26,6 +29,9 @@ add_filter('admin_init', function() {
 	}
 });
 
+/**
+ * Inline SVG images
+ */
 add_filter('the_content', function($content) {
 
 	// Away we go...
@@ -42,12 +48,18 @@ add_filter('the_content', function($content) {
 			preg_match('/wp-image-([0-9]+)/', $class, $match);
 			$id = $match[1];
 
-			// Get SVG file
-			$path = get_attached_file($id);
-			$file = file_get_contents($path);
+			// Get SVG data
+			$transient = 'svg_' . $id;
+			if (false === ($data = get_transient($transient))) {
+				$path = get_attached_file($id);
+				$file = file_get_contents($path);
+				$data = base64_encode($file);
+
+				set_transient($transient, $data, YEAR_IN_SECONDS);
+			}
 
 			// Inline SVG content
-			$uri = 'data:image/svg+xml;base64,' . base64_encode($file);
+			$uri = 'data:image/svg+xml;base64,' . $data;
 			$img->setAttribute('src', $uri);
 
 		}
@@ -58,3 +70,11 @@ add_filter('the_content', function($content) {
 	return $content;
 
 } );
+
+/**
+ * Clear cache on deactivate
+ */
+register_deactivation_hook(__FILE__, function() {
+	global $wpdb;
+	$wpdb->query("DELETE FROM $wpdb->options WHERE option_name LIKE '%_transient_%' and option_name LIKE '%_svg_%';");
+});
