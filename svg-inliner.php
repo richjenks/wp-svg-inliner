@@ -32,9 +32,19 @@ add_filter('the_content', function($content) {
 	$dom = new DOMDocument;
 	$dom->loadHTML($content);
 
-	// Iterate over SVG images
-	foreach ($dom->getElementsByTagName('img') as $img) {
+	/**
+	 * Iterate over images in reverse
+	 * @see http://php.net/manual/en/domnode.replacechild.php#50500
+	 */
+	$imgs = $dom->getElementsByTagName('img');
+	$i = $imgs->length - 1;
+	while ($i > -1) {
+
+		// Get current image
+		$img = $imgs[$i];
 		$src = $img->getAttribute('src');
+
+		// Check if image in as SVG
 		if ('svg' === pathinfo($src, PATHINFO_EXTENSION)) {
 
 			// Get attachment ID
@@ -46,11 +56,32 @@ add_filter('the_content', function($content) {
 			$path = get_attached_file($id);
 			$file = file_get_contents($path);
 
-			// Inline SVG content
-			$uri = 'data:image/svg+xml;base64,' . base64_encode($file);
-			$img->setAttribute('src', $uri);
+			// Get image dimensions
+			$width  = $img->getAttribute('width');
+			$height = $img->getAttribute('height');
+
+			// Generate XML
+			$svg = simplexml_load_string($file);
+			$svg->addAttribute('class', $class);
+			if ($width) $svg['width'] = $width;
+			if ($height) $svg['height'] = $height;
+			$file = $svg->asXML();
+
+			// Remove doctype
+			$file = explode("\n", $file);
+			array_shift($file);
+			$file = implode("\n", $file);
+
+			// Replace image with SVG
+			$svg = $dom->createDocumentFragment();
+			$svg->appendXML($file);
+			$img->parentNode->replaceChild($svg, $img);
 
 		}
+
+		// Decrement
+		$i--;
+
 	}
 
 	// Return new content
