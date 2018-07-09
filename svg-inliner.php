@@ -4,7 +4,7 @@
 Plugin Name: SVG Inliner
 Plugin URI: https://wordpress.org/plugins/svg-inliner/
 Description: Automatically inlines SVG images
-Version: 0.1.0
+Version: 1.0.0
 Author: Rich Jenks
 Author URI: https://richjenks.com
 */
@@ -17,7 +17,7 @@ add_filter('admin_init', function() {
 			$pattern = '
 				<div class="notice notice-warning">
 					<p>
-						Please install and enable the <a href="%s" class="thickbox open-plugin-details-modal">Safe SVG</a> plugin so SVG Inliner to work properly
+						Please install and enable the <a href="%s" class="thickbox open-plugin-details-modal">Safe SVG</a> plugin so SVG Inliner can work properly
 					</p>
 				</div>
 			';
